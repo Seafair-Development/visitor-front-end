@@ -1,7 +1,8 @@
 // pages/api/receiveResponse.js
 export default async function handler(req, res) {
-  // Log the HTTP method and body received
+  // Log the HTTP method, headers, and body received for better debugging
   console.log("Request method received:", req.method);
+  console.log("Request headers:", req.headers);
   console.log("Request body:", req.body);
 
   // Check if the request method is POST or GET for flexibility
@@ -17,7 +18,7 @@ export default async function handler(req, res) {
         console.log("Received eventDate:", eventDate);
       }
 
-      // Respond with the request body or a sample message for GET requests
+      // Respond with the request body for POST, or a sample message for GET requests
       if (req.method === 'POST') {
         res.status(200).json({ message: "Data received successfully", data: req.body });
       } else {
