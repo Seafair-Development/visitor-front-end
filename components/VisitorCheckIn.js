@@ -6,11 +6,11 @@ const VisitorCheckIn = () => {
   const [visitorId, setVisitorId] = useState("");
   const [eventType, setEventType] = useState("signin_after");
   const [response, setResponse] = useState(null);
-  const [error, setError] = useState(null); // Error state for Zapier request
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);  // Reset error before new request
+    setError(null);  // Clear error messages on new submission
 
     try {
       const res = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
@@ -25,11 +25,12 @@ const VisitorCheckIn = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error processing the request to Zapier.");
+      if (!res.ok) throw new Error("Failed to send request to Zapier.");
       
       setResponse(data);  // Success response
+      setError(null);     // Clear error on success
     } catch (err) {
-      setError(err.message || "Failed to send the request to Zapier. Please try again.");  // Display error message
+      setError((prevError) => (prevError ? prevError + "; " : "") + "Failed to send request to Zapier");
       setResponse(null);
     }
   };
