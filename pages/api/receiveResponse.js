@@ -8,6 +8,7 @@ export default async function handler(req, res) {
       // Destructure eventDate specifically for additional logging
       const { eventDate } = req.body;
 
+      // Log or warn if eventDate is missing
       if (!eventDate) {
         console.warn("Warning: 'eventDate' is missing from the received data.");
       } else {
@@ -21,6 +22,8 @@ export default async function handler(req, res) {
       res.status(500).json({ error: "Failed to process data from Zapier." });
     }
   } else {
+    // Handle unsupported methods
+    console.warn(`Method ${req.method} not allowed.`);
     res.setHeader("Allow", ["POST"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
