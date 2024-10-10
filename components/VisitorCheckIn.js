@@ -12,8 +12,8 @@ const VisitorCheckIn = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null); 
-    setResponse(null);
-    setLoading(true); // Set loading state to true while submitting
+    setResponse(null); // Reset response on new submission
+    setLoading(true); 
 
     try {
       const res = await fetch("/api/proxyToZapier", {
@@ -41,10 +41,10 @@ const VisitorCheckIn = () => {
         throw new Error("Unexpected response from Zapier.");
       }
     } catch (err) {
-      console.error("Fetch error:", err); // Log error for debugging
-      setError(err.message); // Display the error message to the user
+      console.error("Fetch error:", err);
+      setError(err.message); // Set error if the request fails
     } finally {
-      setLoading(false); // Reset loading state after completion
+      setLoading(false); 
     }
   };
 
@@ -74,12 +74,14 @@ const VisitorCheckIn = () => {
       </form>
       <QRScanner setVisitorId={setVisitorId} />
 
+      {/* Show response message on success */}
       {response && (
         <div>
           <p>{response.status}</p>
         </div>
       )}
       
+      {/* Show error message on failure */}
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
