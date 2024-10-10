@@ -7,10 +7,13 @@ const VisitorCheckIn = () => {
   const [eventType, setEventType] = useState("signin_after");
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null); // Clear any previous errors on new submission
+    setError(null); 
+    setResponse(null);
+    setLoading(true); // Set loading state to true
 
     try {
       const res = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
@@ -24,30 +27,29 @@ const VisitorCheckIn = () => {
         })
       });
 
-      // Check for successful response
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Failed to send request to Zapier. Status: ${res.status}, Details: ${errorText}`);
       }
 
       const data = await res.json();
-      
-      // Check if the response status is "success"
+
       if (data.status === "success") {
         setResponse({ status: "Request to Zapier was successful." });
         setError(null);
       } else {
-        setResponse(null);
         throw new Error("Unexpected response from Zapier.");
       }
     } catch (err) {
-      setError(err.message);  // Display detailed error message
-      setResponse(null);
+      setError(err.message); 
+    } finally {
+      setLoading(false); // Reset loading state after completion
     }
   };
 
   return (
     <div>
+      <h1>Visitor Check-In/Check-Out App</h1>
       <form onSubmit={handleSubmit}>
         <label>
           Visitor ID:
@@ -68,7 +70,7 @@ const VisitorCheckIn = () => {
             <option value="signout_after">Check-Out</option>
           </select>
         </label>
-        <button type="submit">Submit</button>
+        <button type="submit">{loading ? "Scanning..." : "Submit"}</button>
       </form>
       <QRScanner setVisitorId={setVisitorId} />
 
@@ -77,7 +79,7 @@ const VisitorCheckIn = () => {
           <p>{response.status}</p>
         </div>
       )}
-
+      
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );

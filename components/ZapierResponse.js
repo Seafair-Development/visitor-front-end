@@ -14,7 +14,7 @@ const ZapierResponse = () => {
         }
         const data = await response.json();
         setResponseData(data);
-        setError(null);  // Clear error if successful
+        setError(null);
       } catch (err) {
         setError((prevError) => (prevError ? prevError + "; " : "") + err.message);
         setResponseData(null);
@@ -23,8 +23,6 @@ const ZapierResponse = () => {
 
     // Poll the API every 5 seconds
     const interval = setInterval(fetchData, 5000);
-
-    // Cleanup on component unmount
     return () => clearInterval(interval);
   }, []);
 
@@ -36,18 +34,19 @@ const ZapierResponse = () => {
     return <p>Loading data...</p>;
   }
 
-  // Parse eventDate into Date and Time
+  // Validate and parse eventDate
   const eventDate = new Date(responseData.eventDate);
-  const date = eventDate.toLocaleDateString();
-  const time = eventDate.toLocaleTimeString();
+  const isValidDate = !isNaN(eventDate);
+  const date = isValidDate ? eventDate.toLocaleDateString() : "Date not available";
+  const time = isValidDate ? eventDate.toLocaleTimeString() : "Time not available";
 
   return (
     <div>
       <h3>Visitor Check-In Status</h3>
       <p><strong>Status:</strong> {responseData.status}</p>
-      <p><strong>Full Name:</strong> {responseData.fullName}</p>
-      <p><strong>Date:</strong> {date}</p> {/* Display parsed Date */}
-      <p><strong>Time:</strong> {time}</p> {/* Display parsed Time */}
+      <p><strong>Full Name:</strong> {responseData.fullName || "Name not available"}</p>
+      <p><strong>Date:</strong> {date}</p>
+      <p><strong>Time:</strong> {time}</p>
       {responseData.imageUrl && (
         <div>
           <p><strong>Visitor Image:</strong></p>
