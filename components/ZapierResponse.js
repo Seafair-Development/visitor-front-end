@@ -8,12 +8,12 @@ const ZapierResponse = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/receiveResponse'); // API route to fetch response from Zapier
+        const response = await fetch('/api/receiveResponse'); // Ensure this route returns the response data
         if (!response.ok) {
           throw new Error("Failed to receive request output from Zapier.");
         }
         const data = await response.json();
-        console.log("Response Data:", data); // Debugging: log entire response data
+        console.log("Received Data:", data); // Log full response for debugging
         setResponseData(data);
         setError(null);
       } catch (err) {
@@ -22,7 +22,6 @@ const ZapierResponse = () => {
       }
     };
 
-    // Poll the API every 5 seconds
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -35,26 +34,25 @@ const ZapierResponse = () => {
     return <p>Loading data...</p>;
   }
 
-  // Parse the eventDate if available
+  // Access and parse eventDate
   const eventDate = responseData.eventDate ? new Date(responseData.eventDate) : null;
   const isValidDate = eventDate && !isNaN(eventDate);
   const date = isValidDate ? eventDate.toLocaleDateString() : "Date not available";
   const time = isValidDate ? eventDate.toLocaleTimeString() : "Time not available";
 
-  // Debugging: Log raw JSON if date is not available
   if (!isValidDate) {
-    console.warn("Date and time not available in response. Full data:", responseData);
+    console.warn("Date and time not available or invalid. Full data:", responseData); // Debugging if date is invalid
   }
 
   return (
     <div>
       <h3>Visitor Check-In Status</h3>
-      <p><strong>Message:</strong> Request from Zapier was successful</p> {/* Default message */}
+      <p><strong>Message:</strong> Request from Zapier was successful</p> {/* Default success message */}
       <p><strong>Status:</strong> {responseData.status || "Status not available"}</p>
       <p><strong>Full Name:</strong> {responseData.fullName || "Name not available"}</p>
       <p><strong>Date:</strong> {date}</p>
       <p><strong>Time:</strong> {time}</p>
-      {responseData.imageUrl && (
+      {responseData.imageUrl && responseData.imageUrl !== "No Image Available" && (
         <div>
           <p><strong>Visitor Image:</strong></p>
           <img src={responseData.imageUrl} alt="Visitor" style={{ width: '100px' }} />
