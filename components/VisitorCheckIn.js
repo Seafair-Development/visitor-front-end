@@ -85,3 +85,4 @@ const VisitorCheckIn = () => {
   );
 };
 
+export default VisitorCheckIn;

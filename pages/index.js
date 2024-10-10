@@ -5,7 +5,7 @@ import ZapierResponse from "../components/ZapierResponse";
 export default function Home() {
   return (
     <div>
-      <h1>Visitor Check-In/Check-Out App</h1> {/* Single headline for the page */}
+      <h1>Visitor Check-In/Check-Out App</h1>
       <VisitorCheckIn />
       <ZapierResponse />
     </div>
