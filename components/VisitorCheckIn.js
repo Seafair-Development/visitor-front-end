@@ -1,3 +1,4 @@
+// components/VisitorCheckIn.js
 import React, { useState } from "react";
 import QRScanner from "./QRScanner";
 
@@ -5,13 +6,14 @@ const VisitorCheckIn = () => {
   const [visitorId, setVisitorId] = useState("");
   const [eventType, setEventType] = useState("signin_after");
   const [response, setResponse] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null); // Error state for Zapier request
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);  // Reset error before new request
 
     try {
-      const res = await fetch("/api/zapier", {
+      const res = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -23,11 +25,11 @@ const VisitorCheckIn = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Something went wrong");
-      setResponse(data);
-      setError(null);
+      if (!res.ok) throw new Error(data.message || "Error processing the request to Zapier.");
+      
+      setResponse(data);  // Success response
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to send the request to Zapier. Please try again.");  // Display error message
       setResponse(null);
     }
   };
@@ -57,13 +59,15 @@ const VisitorCheckIn = () => {
         <button type="submit">Submit</button>
       </form>
       <QRScanner setVisitorId={setVisitorId} />
+      
       {response && (
         <div>
           <p>Status: {response.status}</p>
           <p>Full Name: {response.fullName}</p>
-          {response.imageUrl && <img src={response.imageUrl} alt="Visitor" />}
+          {response.imageUrl && <img src={response.imageUrl} alt="Visitor" style={{ width: '100px' }} />}
         </div>
       )}
+
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
