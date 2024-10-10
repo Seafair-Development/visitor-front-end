@@ -13,10 +13,10 @@ const VisitorCheckIn = () => {
     e.preventDefault();
     setError(null); 
     setResponse(null);
-    setLoading(true); 
+    setLoading(true); // Set loading state to true while submitting
 
     try {
-      const res = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
+      const res = await fetch("/api/proxyToZapier", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -41,10 +41,10 @@ const VisitorCheckIn = () => {
         throw new Error("Unexpected response from Zapier.");
       }
     } catch (err) {
-      console.error("Fetch error:", err); // Log error to the console for debugging
-      setError(err.message);
+      console.error("Fetch error:", err); // Log error for debugging
+      setError(err.message); // Display the error message to the user
     } finally {
-      setLoading(false); 
+      setLoading(false); // Reset loading state after completion
     }
   };
 
@@ -85,4 +85,3 @@ const VisitorCheckIn = () => {
   );
 };
 
-export default VisitorCheckIn;
