@@ -42,9 +42,9 @@ const VisitorCheckIn = () => {
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setError(err.message); // Set error if the request fails
+      setError(err.message); // Display the error message to the user
     } finally {
-      setLoading(false); 
+      setLoading(false); // Reset loading state after completion
     }
   };
 
