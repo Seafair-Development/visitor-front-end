@@ -48,6 +48,42 @@ const VisitorCheckIn = () => {
     }
   };
 
+  // Debugging function to manually send a POST request to /api/receiveResponse
+  const handleDebugPost = async () => {
+    setError(null);
+    setResponse(null); // Reset response on new submission
+
+    try {
+      const res = await fetch("/api/receiveResponse", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          visitor_information_visitor_id: visitorId,
+          event_information_event_type: eventType,
+          test_message: "Debugging POST request"  // Sample debug data
+        })
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to send request to receiveResponse. Status: ${res.status}, Details: ${errorText}`);
+      }
+
+      const data = await res.json();
+      console.log("Debug Response Data:", data); // Log the response data for debugging
+
+      setResponse({
+        status: "Debug POST to /api/receiveResponse successful",
+        ...data
+      });
+    } catch (err) {
+      console.error("Debug POST error:", err);
+      setError(err.message); // Display the error message to the user
+    }
+  };
+
   return (
     <div>
       <form onSubmit={handleSubmit}>
@@ -74,10 +110,16 @@ const VisitorCheckIn = () => {
       </form>
       <QRScanner setVisitorId={setVisitorId} />
 
+      {/* Debug button to test POST request to /api/receiveResponse */}
+      <button onClick={handleDebugPost} style={{ marginTop: "10px" }}>
+        Debug POST to /api/receiveResponse
+      </button>
+
       {/* Show response message on success */}
       {response && (
         <div>
           <p>{response.status}</p>
+          <pre>{JSON.stringify(response, null, 2)}</pre>
         </div>
       )}
       
