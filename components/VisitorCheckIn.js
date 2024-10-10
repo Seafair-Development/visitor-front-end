@@ -10,7 +10,7 @@ const VisitorCheckIn = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);  // Clear error messages on new submission
+    setError(null); // Clear any previous errors on new submission
 
     try {
       const res = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
@@ -24,13 +24,24 @@ const VisitorCheckIn = () => {
         })
       });
 
+      // Check for successful response
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to send request to Zapier. Status: ${res.status}, Details: ${errorText}`);
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error("Failed to send request to Zapier.");
       
-      setResponse(data);  // Success response
-      setError(null);     // Clear error on success
+      // Check if the response status is "success"
+      if (data.status === "success") {
+        setResponse({ status: "Request to Zapier was successful." });
+        setError(null);
+      } else {
+        setResponse(null);
+        throw new Error("Unexpected response from Zapier.");
+      }
     } catch (err) {
-      setError((prevError) => (prevError ? prevError + "; " : "") + "Failed to send request to Zapier");
+      setError(err.message);  // Display detailed error message
       setResponse(null);
     }
   };
@@ -60,12 +71,10 @@ const VisitorCheckIn = () => {
         <button type="submit">Submit</button>
       </form>
       <QRScanner setVisitorId={setVisitorId} />
-      
+
       {response && (
         <div>
-          <p>Status: {response.status}</p>
-          <p>Full Name: {response.fullName}</p>
-          {response.imageUrl && <img src={response.imageUrl} alt="Visitor" style={{ width: '100px' }} />}
+          <p>{response.status}</p>
         </div>
       )}
 
