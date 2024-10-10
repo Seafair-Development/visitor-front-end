@@ -8,7 +8,7 @@ const ZapierResponse = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/receiveResponse'); // Ensure this route returns the response data
+        const response = await fetch('/api/receiveResponse');
         if (!response.ok) {
           throw new Error("Failed to receive request output from Zapier.");
         }
@@ -34,7 +34,6 @@ const ZapierResponse = () => {
     return <p>Loading data...</p>;
   }
 
-  // Access and parse eventDate
   const eventDate = responseData.eventDate ? new Date(responseData.eventDate) : null;
   const isValidDate = eventDate && !isNaN(eventDate);
   const date = isValidDate ? eventDate.toLocaleDateString() : "Date not available";
@@ -47,7 +46,7 @@ const ZapierResponse = () => {
   return (
     <div>
       <h3>Visitor Check-In Status</h3>
-      <p><strong>Message:</strong> Request from Zapier was successful</p> {/* Default success message */}
+      <p><strong>Message:</strong> Request from Zapier was successful</p>
       <p><strong>Status:</strong> {responseData.status || "Status not available"}</p>
       <p><strong>Full Name:</strong> {responseData.fullName || "Name not available"}</p>
       <p><strong>Date:</strong> {date}</p>
