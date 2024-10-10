@@ -13,7 +13,7 @@ const VisitorCheckIn = () => {
     e.preventDefault();
     setError(null); 
     setResponse(null);
-    setLoading(true); // Set loading state to true
+    setLoading(true); 
 
     try {
       const res = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
@@ -41,15 +41,15 @@ const VisitorCheckIn = () => {
         throw new Error("Unexpected response from Zapier.");
       }
     } catch (err) {
-      setError(err.message); 
+      console.error("Fetch error:", err); // Log error to the console for debugging
+      setError(err.message);
     } finally {
-      setLoading(false); // Reset loading state after completion
+      setLoading(false); 
     }
   };
 
   return (
     <div>
-      <h1>Visitor Check-In/Check-Out App</h1>
       <form onSubmit={handleSubmit}>
         <label>
           Visitor ID:
