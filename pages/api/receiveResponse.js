@@ -1,13 +1,12 @@
 // pages/api/receiveResponse.js
-import { json } from 'micro';
 
 export default async function handler(req, res) {
   console.log("Received request method:", req.method);  // Log the method for debugging
 
   if (req.method === 'POST') {
     try {
-      // Explicitly parse the JSON body
-      const data = await json(req);
+      // Use req.body directly, as Next.js automatically parses JSON for POST requests
+      const data = req.body;
       console.log("Parsed request body:", data); // Log the parsed data
 
       // Destructure fields from the data
