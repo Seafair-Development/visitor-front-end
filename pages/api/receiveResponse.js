@@ -1,39 +1,38 @@
 // pages/api/receiveResponse.js
 export default async function handler(req, res) {
-  // Log the HTTP method, headers, and body received for better debugging
-  console.log("Request method received:", req.method);
-  console.log("Request headers:", req.headers);
-  console.log("Request body:", req.body);
+  console.log("Received request method:", req.method);  // Log the method for debugging
 
-  // Check if the request method is POST or GET for flexibility
-  if (req.method === 'POST' || req.method === 'GET') {
+  if (req.method === 'POST') {
     try {
-      // Destructure eventDate for additional logging
+      // Log request body for debugging
+      console.log("Request body:", req.body);
+
       const { eventDate } = req.body || {};
       
-      // Log the eventDate if it exists
+      // Log eventDate if provided
       if (!eventDate) {
         console.warn("Warning: 'eventDate' is missing from the received data.");
       } else {
         console.log("Received eventDate:", eventDate);
       }
 
-      // Respond with the request body for POST, or a sample message for GET requests
-      if (req.method === 'POST') {
-        res.status(200).json({ message: "Data received successfully", data: req.body });
-      } else {
-        res.status(200).json({ message: "GET request received (for testing purposes)", data: req.body || "No data in GET request" });
-      }
-
+      // Send a success response with the data received
+      res.status(200).json({
+        message: "Data received successfully",
+        data: req.body,
+        status: req.body.status || "Status not available",
+        fullName: req.body.fullName || "Name not available",
+        imageUrl: req.body.imageUrl || "No Image Available",
+        eventDate: eventDate || "Date not available",
+      });
     } catch (error) {
-      // Log and respond with error message if something goes wrong
       console.error("Error processing data:", error.message);
       res.status(500).json({ error: "Failed to process data." });
     }
   } else {
-    // Log a warning for unsupported methods and return a 405 status
+    // Only allow POST requests
     console.warn(`Method ${req.method} not allowed.`);
-    res.setHeader("Allow", ["POST", "GET"]); // Allow both POST and GET for testing
+    res.setHeader("Allow", ["POST"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

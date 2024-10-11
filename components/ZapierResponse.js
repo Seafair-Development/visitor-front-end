@@ -8,10 +8,18 @@ const ZapierResponse = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/receiveResponse');
+        const response = await fetch('/api/receiveResponse', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ request: "Polling data from Zapier" }), // Sample body to send
+        });
+
         if (!response.ok) {
           throw new Error("Failed to receive request output from Zapier.");
         }
+        
         const data = await response.json();
         console.log("Received Data:", data); // Log full response for debugging
         setResponseData(data);

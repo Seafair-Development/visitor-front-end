@@ -6,13 +6,24 @@ const PollingComponent = () => {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      fetch("/api/your-response-endpoint")
-        .then(response => response.json())
-        .then(data => {
+      fetch("/api/your-response-endpoint", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ request: "Polling for response" }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
           setResponseData(data);
           setError(null);
         })
-        .catch(err => {
+        .catch((err) => {
           setError("Error fetching response.");
           setResponseData(null);
         });
