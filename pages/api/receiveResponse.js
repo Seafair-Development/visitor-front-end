@@ -5,11 +5,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      // Use req.body directly, as Next.js automatically parses JSON for POST requests
+      // Directly access the raw JSON data from req.body
       const data = req.body;
-      console.log("Parsed request body:", data); // Log the parsed data
+      console.log("Raw request body:", data); // Log the raw data for diagnostics
 
-      // Destructure fields from the data
+      // Destructure fields from the data for processed output
       const { eventDate, status, fullName, imageUrl } = data;
 
       // Check if essential fields are missing
@@ -22,21 +22,19 @@ export default async function handler(req, res) {
             eventDate: eventDate ? null : "Missing eventDate",
             status: status ? null : "Missing status",
             fullName: fullName ? null : "Missing fullName"
-          }
+          },
+          rawData: data  // Include the raw JSON data for diagnostic purposes
         });
       }
 
-      // Log valid data
-      console.log("Received valid data:", { eventDate, status, fullName, imageUrl });
-
-      // Respond with a success message if all data is present
+      // Respond with the raw JSON data and the processed fields
       res.status(200).json({
         message: "Data received successfully",
-        data: data,
-        status: status,
-        fullName: fullName,
+        rawData: data,  // Include the raw JSON data for diagnostic purposes
+        status: status || "Status not available",
+        fullName: fullName || "Name not available",
         imageUrl: imageUrl || "No Image Available",
-        eventDate: eventDate
+        eventDate: eventDate || "Date not available"
       });
 
     } catch (error) {
