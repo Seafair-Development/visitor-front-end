@@ -41,8 +41,7 @@ const VisitorCheckIn = () => {
       setReceivedJSON(data);
 
       if (!res.ok || data.error) {
-        const missingFields = data.missingFields ? `Missing fields: ${data.missingFields.join(', ')}` : "Unknown error";
-        throw new Error(`Error: ${data.error || "Request failed"}. ${missingFields}`);
+        throw new Error(`Error: ${data.error || "Request failed"}`);
       }
 
       setResponse(data);
