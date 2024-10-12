@@ -13,24 +13,26 @@ const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to receive data from Zapier.");
+        console.error("Failed to receive data from Zapier."); // Log error to console
+        return;
       }
 
       const data = await response.json();
 
-      // Validate the presence of visitor_id and ensure it matches the sent visitor ID
+      // Skip any data that does not include the expected visitor_id
       if (!data.visitor_id || data.visitor_id !== visitorId) {
         console.warn(`Visitor ID mismatch or missing visitor ID. Expected: ${visitorId}, Received: ${data.visitor_id}`);
-        return; // Skip this response and continue polling
+        return; // Continue polling
       }
 
-      // If visitor IDs match, set the response data and stop polling
+      // If visitor IDs match, stop polling and pass data to parent
       setResponseData(data);
       setError(null);
       setPolling(false); // Stop polling
       onDataReceived(data); // Pass valid data to parent component
     } catch (err) {
-      setError(err.message);
+      console.error("Polling error:", err); // Log the error for debugging
+      setError("There was an issue polling the data. Please try again.");
       setPolling(false); // Stop polling on error
     }
   }, [onDataReceived, visitorId]);
@@ -60,7 +62,7 @@ const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
   }
 
   if (error) {
-    return <p style={{ color: "red" }}>Error: {error}</p>;
+    return <p style={{ color: "red" }}>{error}</p>;
   }
 
   if (!responseData) {
