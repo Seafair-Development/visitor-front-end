@@ -1,77 +1,78 @@
 // components/ZapierResponse.js
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
-const ZapierResponse = () => {
+const ZapierResponse = ({ isSubmitted, onDataReceived }) => {
   const [responseData, setResponseData] = useState(null);
   const [error, setError] = useState(null);
+  const [polling, setPolling] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/pollZapierData', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to receive data from Zapier.");
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 'no_data') {
+        // No new data, continue polling
+        return;
+      }
+      
+      // Valid data received
+      setResponseData(data);
+      setError(null);
+      setPolling(false); // Stop polling
+      onDataReceived(data); // Notify parent component
+    } catch (err) {
+      setError(err.message);
+      setPolling(false); // Stop polling on error
+    }
+  }, [onDataReceived]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/receiveResponse', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ request: "Polling data from Zapier" }), // Sample body to send
-        });
+    let intervalId;
 
-        if (!response.ok) {
-          throw new Error("Failed to receive request output from Zapier.");
-        }
-        
-        const data = await response.json();
-        console.log("Received Data:", data); // Log full response for debugging
-        setResponseData(data);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-        setResponseData(null);
+    if (isSubmitted && !responseData && !error) {
+      setPolling(true);
+      fetchData(); // Immediate first check
+      intervalId = setInterval(fetchData, 5000); // Poll every 5 seconds
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
       }
     };
+  }, [isSubmitted, responseData, error, fetchData]);
 
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  if (!isSubmitted) {
+    return null;
+  }
+
+  if (polling) {
+    return <p>Waiting for response from Zapier...</p>;
+  }
 
   if (error) {
-    return <p style={{ color: "red" }}>{error}</p>;
+    return <p>Error: {error}</p>;
   }
 
   if (!responseData) {
-    return <p>Loading data...</p>;
+    return null;
   }
 
-  const eventDate = responseData.eventDate ? new Date(responseData.eventDate) : null;
-  const isValidDate = eventDate && !isNaN(eventDate);
-  const date = isValidDate ? eventDate.toLocaleDateString() : "Date not available";
-  const time = isValidDate ? eventDate.toLocaleTimeString() : "Time not available";
-
-  if (!isValidDate) {
-    console.warn("Date and time not available or invalid. Full data:", responseData); // Debugging if date is invalid
-  }
-
+  // Render the response data
   return (
     <div>
-      <h3>Visitor Check-In Status</h3>
-      <p><strong>Message:</strong> Request from Zapier was successful</p>
-      <p><strong>Status:</strong> {responseData.status || "Status not available"}</p>
-      <p><strong>Full Name:</strong> {responseData.fullName || "Name not available"}</p>
-      <p><strong>Date:</strong> {date}</p>
-      <p><strong>Time:</strong> {time}</p>
-      {responseData.imageUrl && responseData.imageUrl !== "No Image Available" && (
-        <div>
-          <p><strong>Visitor Image:</strong></p>
-          <img src={responseData.imageUrl} alt="Visitor" style={{ width: '100px' }} />
-        </div>
-      )}
-      {!isValidDate && (
-        <pre style={{ backgroundColor: '#f4f4f4', padding: '10px', borderRadius: '5px' }}>
-          <strong>Raw JSON:</strong> {JSON.stringify(responseData, null, 2)}
-        </pre>
-      )}
+      <h2>Zapier Response</h2>
+      <pre>{JSON.stringify(responseData, null, 2)}</pre>
     </div>
   );
-};
+}
 
 export default ZapierResponse;
