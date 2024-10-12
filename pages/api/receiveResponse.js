@@ -13,14 +13,14 @@ export default async function handler(req, res) {
 
   console.log("Received request in /api/receiveResponse");
   console.log("Request method:", req.method);
-  console.log("Request headers:", req.headers);
-  console.log("Raw request body:", req.body);
+  console.log("Request headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Raw request body:", JSON.stringify(req.body, null, 2));
 
-  if (req.method === 'POST') {
+  if (req.method === 'POST' || req.method === 'GET') { // Allow GET for debugging
     try {
       // Directly access the raw JSON data from req.body
-      const data = req.body;
-      console.log("Parsed request body:", data);
+      const data = req.method === 'POST' ? req.body : req.query; // Use query for GET requests
+      console.log("Parsed request data:", JSON.stringify(data, null, 2));
 
       // Destructure fields from the data for processed output
       const { eventDate, status, fullName, imageUrl } = data;
@@ -36,14 +36,14 @@ export default async function handler(req, res) {
             status: status ? null : "Missing status",
             fullName: fullName ? null : "Missing fullName"
           },
-          rawData: data  // Include the raw JSON data for diagnostic purposes
+          receivedData: data  // Include the received data for diagnostic purposes
         });
       }
 
       // Respond with the raw JSON data and the processed fields
       res.status(200).json({
         message: "Data received successfully",
-        rawData: data,  // Include the raw JSON data for diagnostic purposes
+        receivedData: data,  // Include the received data for diagnostic purposes
         status: status || "Status not available",
         fullName: fullName || "Name not available",
         imageUrl: imageUrl || "No Image Available",
@@ -53,12 +53,13 @@ export default async function handler(req, res) {
     } catch (error) {
       // Log error details if something goes wrong
       console.error("Error processing data:", error.message);
-      res.status(500).json({ error: "Failed to process data." });
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ error: "Failed to process data.", details: error.message });
     }
   } else {
-    // Handle non-POST requests
+    // Handle non-POST/GET requests
     console.warn(`Method ${req.method} not allowed.`);
-    res.setHeader("Allow", ["POST"]);
+    res.setHeader("Allow", ["POST", "GET"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
