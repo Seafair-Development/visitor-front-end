@@ -1,7 +1,7 @@
 // components/ZapierResponse.js
 import React, { useState, useEffect, useCallback } from 'react';
 
-const ZapierResponse = ({ isSubmitted, onDataReceived }) => {
+const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
   const [responseData, setResponseData] = useState(null);
   const [error, setError] = useState(null);
   const [polling, setPolling] = useState(false);
@@ -18,26 +18,22 @@ const ZapierResponse = ({ isSubmitted, onDataReceived }) => {
 
       const data = await response.json();
 
-      // Check for valid, non-blank fields
-      const requiredFields = ['eventDate', 'status', 'fullName', 'visitor_id'];
-      const missingFields = requiredFields.filter(field => !data[field] || data[field] === "");
-
-      // If any required field is missing or blank, skip this data
-      if (missingFields.length > 0 || data.status === 'no_data') {
-        console.warn(`Incomplete data received. Missing fields: ${missingFields.join(', ')}`);
-        return; // Continue polling
+      // Validate the presence of visitor_id and ensure it matches the sent visitor ID
+      if (!data.visitor_id || data.visitor_id !== visitorId) {
+        console.warn(`Visitor ID mismatch or missing visitor ID. Expected: ${visitorId}, Received: ${data.visitor_id}`);
+        return; // Skip this response and continue polling
       }
 
-      // If data is valid, set response data and stop polling
+      // If visitor IDs match, set the response data and stop polling
       setResponseData(data);
       setError(null);
       setPolling(false); // Stop polling
-      onDataReceived(data); // Pass the valid data to parent component
+      onDataReceived(data); // Pass valid data to parent component
     } catch (err) {
       setError(err.message);
       setPolling(false); // Stop polling on error
     }
-  }, [onDataReceived]);
+  }, [onDataReceived, visitorId]);
 
   useEffect(() => {
     let intervalId;
