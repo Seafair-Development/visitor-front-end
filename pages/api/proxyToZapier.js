@@ -21,7 +21,36 @@ export default async function handler(req, res) {
 
       const data = await zapierResponse.json();
       console.log("Zapier Response Data:", data);
-      res.status(200).json({ status: "success", data });
+
+      // Check for required fields
+      const requiredFields = ['eventDate', 'status', 'fullName', 'visitor_id'];
+      const missingFields = requiredFields.filter(field => !data[field]);
+
+      if (missingFields.length > 0) {
+        console.warn("Missing required fields:", missingFields);
+        return res.status(400).json({ 
+          error: "Incomplete data received from Zapier", 
+          missingFields 
+        });
+      }
+
+      // Check for undefined values
+      const undefinedFields = Object.keys(data).filter(key => data[key] === undefined);
+      if (undefinedFields.length > 0) {
+        console.warn("Fields with undefined values:", undefinedFields);
+        return res.status(400).json({ 
+          error: "Received undefined values from Zapier", 
+          undefinedFields 
+        });
+      }
+
+      // If we've made it here, all required fields are present and no undefined values
+      // Pass through the raw JSON for diagnostic purposes
+      res.status(200).json({ 
+        status: "success", 
+        rawData: data,
+        isRawOutput: true  // Flag to indicate this is raw output
+      });
     } catch (error) {
       console.error("Error connecting to Zapier:", error.message);
       res.status(500).json({ error: "Failed to connect to Zapier. Check network connectivity or webhook availability." });

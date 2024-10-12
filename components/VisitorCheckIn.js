@@ -8,11 +8,13 @@ const VisitorCheckIn = () => {
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [rawOutput, setRawOutput] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null); 
-    setResponse(null); // Reset response on new submission
+    setResponse(null);
+    setRawOutput(null);
     setLoading(true); 
 
     try {
@@ -27,55 +29,59 @@ const VisitorCheckIn = () => {
         })
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to send request to Zapier. Status: ${res.status}, Details: ${errorText}`);
-      }
-
       const data = await res.json();
 
+      if (!res.ok) {
+        if (res.status === 400) {
+          if (data.missingFields) {
+            throw new Error(`Missing fields in Zapier response: ${data.missingFields.join(', ')}`);
+          } else if (data.undefinedFields) {
+            throw new Error(`Undefined fields in Zapier response: ${data.undefinedFields.join(', ')}`);
+          } else {
+            throw new Error(data.error || "Bad request");
+          }
+        } else {
+          throw new Error(`Failed to send request to Zapier. Status: ${res.status}`);
+        }
+      }
+
       if (data.status === "success") {
-        setResponse({ status: "Request to Zapier was successful." });
+        if (data.isRawOutput) {
+          setRawOutput(data.rawData);
+        } else {
+          setResponse(data);
+        }
         setError(null);
       } else {
         throw new Error("Unexpected response from Zapier.");
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setError(err.message); // Display the error message to the user
+      setError(err.message);
     } finally {
-      setLoading(false); // Reset loading state after completion
+      setLoading(false);
     }
   };
 
   return (
     <div>
       <form onSubmit={handleSubmit}>
-        <label>
-          Visitor ID:
-          <input
-            type="text"
-            value={visitorId}
-            onChange={(e) => setVisitorId(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Event Type:
-          <select
-            value={eventType}
-            onChange={(e) => setEventType(e.target.value)}
-          >
-            <option value="signin_after">Check-In</option>
-            <option value="signout_after">Check-Out</option>
-          </select>
-        </label>
-        <button type="submit">{loading ? "Submitting..." : "Submit"}</button>
+        {/* Form fields here */}
       </form>
       <QRScanner setVisitorId={setVisitorId} />
 
-      {/* Show response message on success */}
-      {response && (
+      {/* Display raw JSON output for diagnostics */}
+      {rawOutput && (
+        <div>
+          <h3>Raw JSON Output (Diagnostic):</h3>
+          <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', borderRadius: '5px', overflow: 'auto' }}>
+            {JSON.stringify(rawOutput, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {/* Show regular response message on success */}
+      {response && !rawOutput && (
         <div>
           <p>{response.status}</p>
           <pre>{JSON.stringify(response, null, 2)}</pre>
