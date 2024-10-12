@@ -1,13 +1,26 @@
 // pages/api/receiveResponse.js
 
 export default async function handler(req, res) {
-  console.log("Received request method:", req.method);  // Log the method for debugging
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  console.log("Received request in /api/receiveResponse");
+  console.log("Request method:", req.method);
+  console.log("Request headers:", req.headers);
+  console.log("Raw request body:", req.body);
 
   if (req.method === 'POST') {
     try {
       // Directly access the raw JSON data from req.body
       const data = req.body;
-      console.log("Raw request body:", data); // Log the raw data for diagnostics
+      console.log("Parsed request body:", data);
 
       // Destructure fields from the data for processed output
       const { eventDate, status, fullName, imageUrl } = data;
