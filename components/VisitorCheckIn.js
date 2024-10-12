@@ -10,19 +10,20 @@ const VisitorCheckIn = () => {
   const [loading, setLoading] = useState(false);
   const [sentJSON, setSentJSON] = useState(null);
   const [receivedJSON, setReceivedJSON] = useState(null);
+  const [debugMode, setDebugMode] = useState(true); // Toggle for showing debug info
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null); 
+    setError(null);
     setResponse(null);
     setReceivedJSON(null);
-    setLoading(true); 
+    setLoading(true);
 
     const requestBody = {
       visitor_information_visitor_id: visitorId,
       event_information_event_type: eventType
     };
-    setSentJSON(requestBody);
+    setSentJSON(requestBody); // Save the JSON being sent for debugging
 
     try {
       const res = await fetch("/api/proxyToZapier", {
@@ -34,8 +35,9 @@ const VisitorCheckIn = () => {
       });
 
       const data = await res.json();
-      setReceivedJSON(data);
+      setReceivedJSON(data); // Save the JSON received for debugging
 
+      // Check response for validity
       if (!res.ok) {
         if (res.status === 400) {
           if (data.missingFields) {
@@ -64,14 +66,31 @@ const VisitorCheckIn = () => {
     }
   };
 
-  // ... rest of the component (handleDebugPost, render method) remains the same
-
   return (
     <div>
-      {/* ... form and other elements remain the same ... */}
+      <h1>Visitor Check-In</h1>
+      <form onSubmit={handleSubmit}>
+        <QRScanner setVisitorId={setVisitorId} />
+        <label>
+          Event Type:
+          <select value={eventType} onChange={(e) => setEventType(e.target.value)}>
+            <option value="signin_after">Sign In</option>
+            <option value="signout_after">Sign Out</option>
+          </select>
+        </label>
+        <button type="submit" disabled={loading}>
+          {loading ? "Processing..." : "Submit"}
+        </button>
+      </form>
 
-      {/* Display sent JSON */}
-      {sentJSON && (
+      {/* Toggle debug information */}
+      <label>
+        Debug Mode:
+        <input type="checkbox" checked={debugMode} onChange={() => setDebugMode(!debugMode)} />
+      </label>
+
+      {/* Debug: Display sent JSON */}
+      {debugMode && sentJSON && (
         <div>
           <h3>Sent JSON:</h3>
           <pre style={{ backgroundColor: '#e6f7ff', padding: '10px', borderRadius: '5px', overflow: 'auto' }}>
@@ -80,8 +99,8 @@ const VisitorCheckIn = () => {
         </div>
       )}
 
-      {/* Display received JSON */}
-      {receivedJSON && (
+      {/* Debug: Display received JSON */}
+      {debugMode && receivedJSON && (
         <div>
           <h3>Received JSON:</h3>
           <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', borderRadius: '5px', overflow: 'auto' }}>
@@ -90,16 +109,16 @@ const VisitorCheckIn = () => {
         </div>
       )}
 
-      {/* Show regular response message on success */}
+      {/* Regular response output */}
       {response && (
         <div>
-          <h3>Processed Response:</h3>
+          <h3>Response:</h3>
           <p>{response.status}</p>
           <pre>{JSON.stringify(response, null, 2)}</pre>
         </div>
       )}
-      
-      {/* Show error message on failure */}
+
+      {/* Error message display */}
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
     </div>
   );
