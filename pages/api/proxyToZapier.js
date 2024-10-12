@@ -13,21 +13,13 @@ export default async function handler(req, res) {
         body: JSON.stringify(req.body)
       });
 
-      const contentType = zapierResponse.headers.get("content-type");
       if (!zapierResponse.ok) {
         const errorText = await zapierResponse.text();
         console.error("Error from Zapier:", errorText);
         return res.status(zapierResponse.status).json({ error: errorText });
       }
 
-      let data;
-      if (contentType && contentType.includes("application/json")) {
-        data = await zapierResponse.json();
-      } else {
-        data = await zapierResponse.text();
-        console.warn("Received non-JSON response from Zapier:", data);
-      }
-      
+      const data = await zapierResponse.json();
       console.log("Zapier Response Data:", data);
       res.status(200).json({ status: "success", data });
     } catch (error) {

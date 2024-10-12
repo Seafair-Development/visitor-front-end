@@ -1,18 +1,19 @@
 // components/VisitorCheckIn.js
 import React, { useState } from "react";
 import QRScanner from "./QRScanner";
-import ZapierResponse from "./ZapierResponse";
 
 const VisitorCheckIn = () => {
   const [visitorId, setVisitorId] = useState("");
   const [eventType, setEventType] = useState("signin_after");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setIsSubmitted(false);
+    setError(null); 
+    setResponse(null); // Reset response on new submission
+    setLoading(true); 
 
     try {
       const res = await fetch("/api/proxyToZapier", {
@@ -27,40 +28,62 @@ const VisitorCheckIn = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`Failed to send request to Zapier. Status: ${res.status}`);
+        const errorText = await res.text();
+        throw new Error(`Failed to send request to Zapier. Status: ${res.status}, Details: ${errorText}`);
       }
 
       const data = await res.json();
 
       if (data.status === "success") {
-        setIsSubmitted(true);
+        setResponse({ status: "Request to Zapier was successful." });
+        setError(null);
       } else {
         throw new Error("Unexpected response from Zapier.");
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setError(err.message);
+      setError(err.message); // Display the error message to the user
+    } finally {
+      setLoading(false); // Reset loading state after completion
     }
-  };
-
-  const handleDataReceived = (data) => {
-    // Handle the received data, e.g., update UI or state
-    console.log("Data received from Zapier:", data);
-    // You might want to do something with this data
   };
 
   return (
     <div>
       <form onSubmit={handleSubmit}>
-        {/* ... form fields ... */}
-        <button type="submit">Submit</button>
+        <label>
+          Visitor ID:
+          <input
+            type="text"
+            value={visitorId}
+            onChange={(e) => setVisitorId(e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Event Type:
+          <select
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+          >
+            <option value="signin_after">Check-In</option>
+            <option value="signout_after">Check-Out</option>
+          </select>
+        </label>
+        <button type="submit">{loading ? "Submitting..." : "Submit"}</button>
       </form>
       <QRScanner setVisitorId={setVisitorId} />
+
+      {/* Show response message on success */}
+      {response && (
+        <div>
+          <p>{response.status}</p>
+          <pre>{JSON.stringify(response, null, 2)}</pre>
+        </div>
+      )}
+      
+      {/* Show error message on failure */}
       {error && <p style={{ color: "red" }}>{error}</p>}
-      <ZapierResponse 
-        isSubmitted={isSubmitted} 
-        onDataReceived={handleDataReceived}
-      />
     </div>
   );
 };
