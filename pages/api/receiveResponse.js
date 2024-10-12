@@ -12,21 +12,21 @@ export default async (req, res) => {
   try {
     const { visitor_id } = req.body;
 
-    // Log incoming data for debugging
+    // Log the incoming data for debugging
     console.info("Received data from Zapier:", JSON.stringify(req.body, null, 2));
 
-    // Check if visitor_id is a valid UUID v4
-    if (!uuidV4Regex.test(visitor_id)) {
-      console.warn("Ignored request due to invalid or null visitor_id.");
+    // Validate that visitor_id is a UUID v4
+    if (!visitor_id || !uuidV4Regex.test(visitor_id)) {
+      console.warn("Ignoring request due to invalid or null visitor_id.");
       res.status(204).end(); // No response content for invalid visitor_id
       return; // Exit without further processing
     }
 
-    // If visitor_id is a valid UUID v4, proceed with processing
+    // If visitor_id is a valid UUID v4, process the request
     console.info("Processing request with valid UUID v4 visitor_id:", visitor_id);
     res.status(200).json({
       status: "success",
-      data: req.body  // Return the full JSON object for the valid request
+      data: req.body  // Return the full JSON object for valid request
     });
   } catch (error) {
     console.error("Error processing Zapier response:", error);
