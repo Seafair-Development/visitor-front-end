@@ -12,7 +12,7 @@ const VisitorCheckIn = () => {
   const [sentJSON, setSentJSON] = useState(null);
   const [receivedJSON, setReceivedJSON] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [debugMode, setDebugMode] = useState(true); // Restored debug mode checkbox
+  const [debugMode, setDebugMode] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +26,7 @@ const VisitorCheckIn = () => {
       visitor_information_visitor_id: visitorId,
       event_information_event_type: eventType
     };
-    setSentJSON(requestBody); // Save sent JSON for debugging
+    setSentJSON(requestBody);
 
     try {
       const res = await fetch("/api/proxyToZapier", {
@@ -38,10 +38,11 @@ const VisitorCheckIn = () => {
       });
 
       const data = await res.json();
-      setReceivedJSON(data); // Save received JSON for debugging
+      setReceivedJSON(data);
 
-      if (!res.ok) {
-        throw new Error(`Error: ${data.error || "Request failed"}`);
+      if (!res.ok || data.error) {
+        const missingFields = data.missingFields ? `Missing fields: ${data.missingFields.join(', ')}` : "Unknown error";
+        throw new Error(`Error: ${data.error || "Request failed"}. ${missingFields}`);
       }
 
       setResponse(data);
@@ -57,7 +58,6 @@ const VisitorCheckIn = () => {
     <div>
       <h1>Visitor Check-In</h1>
       <form onSubmit={handleSubmit}>
-        {/* Visitor ID input field */}
         <label>
           Visitor ID:
           <input
@@ -69,10 +69,8 @@ const VisitorCheckIn = () => {
           />
         </label>
 
-        {/* QR Scanner component */}
         <QRScanner setVisitorId={setVisitorId} />
 
-        {/* Event Type dropdown */}
         <label>
           Event Type:
           <select value={eventType} onChange={(e) => setEventType(e.target.value)}>
@@ -81,19 +79,16 @@ const VisitorCheckIn = () => {
           </select>
         </label>
         
-        {/* Submit button */}
         <button type="submit" disabled={loading}>
           {loading ? "Processing..." : "Submit"}
         </button>
       </form>
 
-      {/* Debug Mode Toggle */}
       <label>
         Debug Mode:
         <input type="checkbox" checked={debugMode} onChange={() => setDebugMode(!debugMode)} />
       </label>
 
-      {/* Debug: Display sent JSON */}
       {debugMode && sentJSON && (
         <div>
           <h3>Sent JSON:</h3>
@@ -103,7 +98,6 @@ const VisitorCheckIn = () => {
         </div>
       )}
 
-      {/* Debug: Display received JSON */}
       {debugMode && receivedJSON && (
         <div>
           <h3>Received JSON:</h3>
@@ -113,7 +107,6 @@ const VisitorCheckIn = () => {
         </div>
       )}
 
-      {/* Regular response output */}
       {response && (
         <div>
           <h3>Response:</h3>
@@ -121,10 +114,8 @@ const VisitorCheckIn = () => {
         </div>
       )}
 
-      {/* Error message display */}
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Pass the visitor ID to ZapierResponse for validation */}
       <ZapierResponse
         isSubmitted={isSubmitted}
         visitorId={visitorId}
