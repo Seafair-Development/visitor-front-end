@@ -1,4 +1,8 @@
 // /api/receiveResponse.js
+
+// Flag to track if the first valid request has been processed
+let hasProcessedFirstValidRequest = false;
+
 export default async (req, res) => {
   if (req.method !== "POST") {
     res.status(405).send({ error: "Method not allowed" });
@@ -6,34 +10,31 @@ export default async (req, res) => {
   }
 
   try {
-    const { visitor_information_visitor_id: sentVisitorId, event_information_event_type } = req.body;
-    const { visitor_id, eventDate, fullName, status } = req.body;  // Adapt to your actual data structure
+    const { visitor_id } = req.body;
 
-    // Required fields to validate
-    const requiredFields = ["visitor_id", "eventDate", "fullName"];
-    const missingFields = requiredFields.filter(field => !req.body[field]);
+    // Log the incoming data for debugging purposes
+    console.info("Received data from Zapier:", JSON.stringify(req.body, null, 2));
 
-    // Ensure visitor_id is not null and matches the sent visitor ID
-    if (missingFields.length > 0 || visitor_id !== sentVisitorId) {
-      const missingInfo = missingFields.length > 0 ? `Missing fields: ${missingFields.join(", ")}` : '';
-      const visitorIdMismatch = visitor_id !== sentVisitorId ? `Visitor ID mismatch. Expected: ${sentVisitorId}, Received: ${visitor_id}` : '';
-      const errorMessage = `${missingInfo} ${visitorIdMismatch}`.trim();
-
-      console.warn(`Incomplete or mismatched data received: ${errorMessage}`);
-      res.status(400).json({
-        error: "Incomplete data or visitor ID mismatch",
-        missingFields,
-        visitorIdMismatch,
-        receivedData: req.body
-      });
-      return;
+    // Check if visitor_id is present and not null
+    if (!visitor_id) {
+      console.warn("Ignored request due to missing or null visitor_id.");
+      return; // Exit without processing or responding
     }
 
-    // Output the complete response JSON if all validations pass
-    console.info("Received complete and valid data from Zapier:", req.body);
+    // If we have already processed the first valid request, ignore further valid requests
+    if (hasProcessedFirstValidRequest) {
+      console.warn("Ignored request: already processed the first valid request.");
+      return; // Exit without processing or responding
+    }
+
+    // Mark that we've processed the first valid request
+    hasProcessedFirstValidRequest = true;
+
+    // Process and respond to the first valid request
+    console.info("Processing first valid request with visitor_id:", visitor_id);
     res.status(200).json({
       status: "success",
-      data: req.body  // Return the full JSON object
+      data: req.body  // Return the full JSON object of the first valid request
     });
   } catch (error) {
     console.error("Error processing Zapier response:", error);
