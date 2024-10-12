@@ -1,6 +1,7 @@
 // components/VisitorCheckIn.js
 import React, { useState } from "react";
 import QRScanner from "./QRScanner";
+import ZapierResponse from "./ZapierResponse";
 
 const VisitorCheckIn = () => {
   const [visitorId, setVisitorId] = useState("");
@@ -10,7 +11,8 @@ const VisitorCheckIn = () => {
   const [loading, setLoading] = useState(false);
   const [sentJSON, setSentJSON] = useState(null);
   const [receivedJSON, setReceivedJSON] = useState(null);
-  const [debugMode, setDebugMode] = useState(true); // Toggle for showing debug info
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [debugMode, setDebugMode] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,12 +20,13 @@ const VisitorCheckIn = () => {
     setResponse(null);
     setReceivedJSON(null);
     setLoading(true);
+    setIsSubmitted(true);
 
     const requestBody = {
       visitor_information_visitor_id: visitorId,
       event_information_event_type: eventType
     };
-    setSentJSON(requestBody); // Save the JSON being sent for debugging
+    setSentJSON(requestBody);
 
     try {
       const res = await fetch("/api/proxyToZapier", {
@@ -35,9 +38,8 @@ const VisitorCheckIn = () => {
       });
 
       const data = await res.json();
-      setReceivedJSON(data); // Save the JSON received for debugging
+      setReceivedJSON(data);
 
-      // Check response for validity
       if (!res.ok) {
         if (res.status === 400) {
           if (data.missingFields) {
@@ -63,6 +65,7 @@ const VisitorCheckIn = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+      setIsSubmitted(false);
     }
   };
 
@@ -70,7 +73,22 @@ const VisitorCheckIn = () => {
     <div>
       <h1>Visitor Check-In</h1>
       <form onSubmit={handleSubmit}>
+        {/* Visitor ID input field */}
+        <label>
+          Visitor ID:
+          <input
+            type="text"
+            value={visitorId}
+            onChange={(e) => setVisitorId(e.target.value)}
+            placeholder="Enter or scan Visitor ID"
+            required
+          />
+        </label>
+
+        {/* QR Scanner component */}
         <QRScanner setVisitorId={setVisitorId} />
+
+        {/* Event Type dropdown */}
         <label>
           Event Type:
           <select value={eventType} onChange={(e) => setEventType(e.target.value)}>
@@ -78,6 +96,8 @@ const VisitorCheckIn = () => {
             <option value="signout_after">Sign Out</option>
           </select>
         </label>
+        
+        {/* Submit button */}
         <button type="submit" disabled={loading}>
           {loading ? "Processing..." : "Submit"}
         </button>
@@ -120,6 +140,9 @@ const VisitorCheckIn = () => {
 
       {/* Error message display */}
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
+
+      {/* Polling Component */}
+      <ZapierResponse isSubmitted={isSubmitted} onDataReceived={(data) => setResponse(data)} />
     </div>
   );
 };
