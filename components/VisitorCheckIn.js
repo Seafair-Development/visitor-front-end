@@ -93,3 +93,12 @@ const VisitorCheckIn = () => {
 
       {/* Pass the visitor ID to ZapierResponse for validation */}
       <ZapierResponse
+        isSubmitted={isSubmitted}
+        visitorId={visitorId}
+        onDataReceived={(data) => setResponse(data)}
+      />
+    </div>
+  );
+};
+
+export default VisitorCheckIn;
