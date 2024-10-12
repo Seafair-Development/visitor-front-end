@@ -15,19 +15,24 @@ const ZapierResponse = ({ isSubmitted, onDataReceived }) => {
       if (!response.ok) {
         throw new Error("Failed to receive data from Zapier.");
       }
-      
+
       const data = await response.json();
-      
-      if (data.status === 'no_data') {
-        // No new data, continue polling
-        return;
+
+      // Check for valid, non-blank fields
+      const requiredFields = ['eventDate', 'status', 'fullName', 'visitor_id'];
+      const missingFields = requiredFields.filter(field => !data[field] || data[field] === "");
+
+      // If any required field is missing or blank, skip this data
+      if (missingFields.length > 0 || data.status === 'no_data') {
+        console.warn(`Incomplete data received. Missing fields: ${missingFields.join(', ')}`);
+        return; // Continue polling
       }
-      
-      // Valid data received
+
+      // If data is valid, set response data and stop polling
       setResponseData(data);
       setError(null);
       setPolling(false); // Stop polling
-      onDataReceived(data); // Notify parent component
+      onDataReceived(data); // Pass the valid data to parent component
     } catch (err) {
       setError(err.message);
       setPolling(false); // Stop polling on error
@@ -51,7 +56,7 @@ const ZapierResponse = ({ isSubmitted, onDataReceived }) => {
   }, [isSubmitted, responseData, error, fetchData]);
 
   if (!isSubmitted) {
-    return null;
+    return null; // Only start polling after submission
   }
 
   if (polling) {
@@ -59,14 +64,13 @@ const ZapierResponse = ({ isSubmitted, onDataReceived }) => {
   }
 
   if (error) {
-    return <p>Error: {error}</p>;
+    return <p style={{ color: "red" }}>Error: {error}</p>;
   }
 
   if (!responseData) {
     return null;
   }
 
-  // Render the response data
   return (
     <div>
       <h2>Zapier Response</h2>
