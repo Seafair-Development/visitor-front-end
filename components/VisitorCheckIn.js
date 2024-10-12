@@ -10,7 +10,6 @@ const VisitorCheckIn = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sentJSON, setSentJSON] = useState(null);
-  const [receivedJSON, setReceivedJSON] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [debugMode, setDebugMode] = useState(true);
 
@@ -18,7 +17,6 @@ const VisitorCheckIn = () => {
     e.preventDefault();
     setError(null);
     setResponse(null);
-    setReceivedJSON(null);
     setLoading(true);
     setIsSubmitted(true);
 
@@ -37,13 +35,11 @@ const VisitorCheckIn = () => {
         body: JSON.stringify(requestBody)
       });
 
-      const data = await res.json();
-      setReceivedJSON(data);
-
-      if (!res.ok || data.error) {
-        throw new Error(`Error: ${data.error || "Request failed"}`);
+      if (res.status !== 200) {
+        throw new Error(`Received non-200 response: ${res.status}`);
       }
 
+      const data = await res.json();
       setResponse(data);
       setError(null);
     } catch (err) {
@@ -93,15 +89,6 @@ const VisitorCheckIn = () => {
           <h3>Sent JSON:</h3>
           <pre style={{ backgroundColor: '#e6f7ff', padding: '10px', borderRadius: '5px', overflow: 'auto' }}>
             {JSON.stringify(sentJSON, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {debugMode && receivedJSON && (
-        <div>
-          <h3>Received JSON:</h3>
-          <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', borderRadius: '5px', overflow: 'auto' }}>
-            {JSON.stringify(receivedJSON, null, 2)}
           </pre>
         </div>
       )}

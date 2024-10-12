@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
   const [polling, setPolling] = useState(false);
-  const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -11,32 +10,34 @@ const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
         method: 'GET',
       });
 
-      if (!response.ok) {
-        console.error("Failed to receive data from Zapier."); // Log error to console
-        return;
+      // Only process if the response is 200 OK
+      if (response.status !== 200) {
+        console.warn(`Ignored response with status: ${response.status}`);
+        return; // Exit without processing further
       }
 
       const data = await response.json();
 
-      // Check visitor_id and required fields
-      if (data.visitor_id !== visitorId || !data.eventDate || !data.fullName || !data.visitor_id) {
-        console.warn(`Incomplete data. Received visitor ID: ${data.visitor_id}`);
-        return; // Continue polling
+      // Check if visitor_id matches the expected ID
+      if (!data.visitor_id || data.visitor_id !== visitorId) {
+        console.warn(`Visitor ID mismatch. Expected: ${visitorId}, Received: ${data.visitor_id}`);
+        return; // Continue polling, do not process this response
       }
 
-      setPolling(false); // Stop polling
+      // Process and pass valid response data to the parent component
+      console.info("Received valid response:", data);
+      setPolling(false); // Stop polling once valid data is received
       onDataReceived(data); // Send complete data to parent component
     } catch (err) {
       console.error("Polling error:", err); // Log for debugging
-      setError("There was an issue polling the data. Please try again.");
-      setPolling(false); // Stop polling on error
+      setPolling(false);
     }
   }, [onDataReceived, visitorId]);
 
   useEffect(() => {
     let intervalId;
 
-    if (isSubmitted && !error) {
+    if (isSubmitted) {
       setPolling(true);
       fetchData();
       intervalId = setInterval(fetchData, 5000); // Poll every 5 seconds
@@ -47,7 +48,7 @@ const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
         clearInterval(intervalId);
       }
     };
-  }, [isSubmitted, fetchData, error]);
+  }, [isSubmitted, fetchData]);
 
   if (!isSubmitted) {
     return null; // Poll only after submission
@@ -55,10 +56,6 @@ const ZapierResponse = ({ isSubmitted, visitorId, onDataReceived }) => {
 
   if (polling) {
     return <p>Waiting for response from Zapier...</p>;
-  }
-
-  if (error) {
-    return <p style={{ color: "red" }}>{error}</p>;
   }
 
   return null;
