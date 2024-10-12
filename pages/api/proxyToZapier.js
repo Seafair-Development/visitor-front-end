@@ -13,14 +13,21 @@ export default async function handler(req, res) {
         body: JSON.stringify(req.body)
       });
 
-      if (!zapierResponse.ok) {
-        const errorText = await zapierResponse.text();
-        console.error("Error from Zapier:", errorText);
-        return res.status(zapierResponse.status).json({ error: errorText });
+      const responseData = await zapierResponse.text();
+      console.log("Raw Zapier Response:", responseData);
+
+      let data;
+      try {
+        data = JSON.parse(responseData);
+      } catch (parseError) {
+        console.error("Error parsing Zapier response:", parseError);
+        return res.status(500).json({ 
+          error: "Invalid JSON response from Zapier", 
+          rawResponse: responseData 
+        });
       }
 
-      const data = await zapierResponse.json();
-      console.log("Zapier Response Data:", data);
+      console.log("Parsed Zapier Response Data:", data);
 
       // Check for required fields
       const requiredFields = ['eventDate', 'status', 'fullName', 'visitor_id'];
@@ -30,30 +37,36 @@ export default async function handler(req, res) {
         console.warn("Missing required fields:", missingFields);
         return res.status(400).json({ 
           error: "Incomplete data received from Zapier", 
-          missingFields 
+          missingFields,
+          receivedData: data
         });
       }
 
-      // Check for undefined values
-      const undefinedFields = Object.keys(data).filter(key => data[key] === undefined);
-      if (undefinedFields.length > 0) {
-        console.warn("Fields with undefined values:", undefinedFields);
+      // Check for undefined or empty string values
+      const invalidFields = Object.entries(data)
+        .filter(([key, value]) => requiredFields.includes(key) && (value === undefined || value === ""))
+        .map(([key]) => key);
+
+      if (invalidFields.length > 0) {
+        console.warn("Fields with invalid values:", invalidFields);
         return res.status(400).json({ 
-          error: "Received undefined values from Zapier", 
-          undefinedFields 
+          error: "Received invalid values from Zapier", 
+          invalidFields,
+          receivedData: data
         });
       }
 
-      // If we've made it here, all required fields are present and no undefined values
-      // Pass through the raw JSON for diagnostic purposes
+      // If we've made it here, all required fields are present and valid
       res.status(200).json({ 
         status: "success", 
-        rawData: data,
-        isRawOutput: true  // Flag to indicate this is raw output
+        data: data
       });
     } catch (error) {
       console.error("Error connecting to Zapier:", error.message);
-      res.status(500).json({ error: "Failed to connect to Zapier. Check network connectivity or webhook availability." });
+      res.status(500).json({ 
+        error: "Failed to connect to Zapier or process the response", 
+        details: error.message 
+      });
     }
   } else {
     res.setHeader("Allow", ["POST"]);
