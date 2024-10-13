@@ -7,7 +7,7 @@ const VisitorCheckIn = () => {
   const [eventType, setEventType] = useState("Sign In");
   const [statusMessage, setStatusMessage] = useState("");
   const [visitorData, setVisitorData] = useState(null);
-  const [debugInfo, setDebugInfo] = useState(null); // New state for debug information
+  const [debugInfo, setDebugInfo] = useState(null); // State for debugging
 
   // Function to handle the API call and response
   const handleApiResponse = async () => {
@@ -16,10 +16,8 @@ const VisitorCheckIn = () => {
       event_information_event_type: eventType === "Sign In" ? "signin_after" : "signout_after"
     };
 
-    // Log the payload being sent to Zapier
+    // Log the payload and set debug info for sent JSON
     console.info("Sending payload to Zapier:", JSON.stringify(payload, null, 2));
-
-    // Set debug information for sent JSON
     setDebugInfo({ sentJSON: payload, receivedJSON: null });
 
     try {
@@ -38,7 +36,7 @@ const VisitorCheckIn = () => {
         const data = await response.json();
         console.info("Received data from Zapier:", JSON.stringify(data, null, 2));
         
-        // Update visitor data for rendering and debug info for received JSON
+        // Update visitor data and debug info
         setVisitorData(data);
         setDebugInfo(prev => ({ ...prev, receivedJSON: data }));
         setStatusMessage("Check-in complete!");

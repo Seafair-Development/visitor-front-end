@@ -1,75 +1,39 @@
-// pages/api/proxyToZapier.js
-export default async function handler(req, res) {
-  console.log("Request method:", req.method);
-  console.log("Received request body:", req.body);
+// /pages/api/proxyToZapier.js
 
-  if (req.method === 'POST') {
-    try {
-      const zapierResponse = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(req.body)
-      });
-
-      const responseData = await zapierResponse.text();
-      console.log("Raw Zapier Response:", responseData);
-
-      let data;
-      try {
-        data = JSON.parse(responseData);
-      } catch (parseError) {
-        console.error("Error parsing Zapier response:", parseError);
-        return res.status(500).json({ 
-          error: "Invalid JSON response from Zapier", 
-          rawResponse: responseData 
-        });
-      }
-
-      console.log("Parsed Zapier Response Data:", data);
-
-      // Check for required fields
-      const requiredFields = ['eventDate', 'status', 'fullName', 'visitor_id'];
-      const missingFields = requiredFields.filter(field => !data[field]);
-
-      if (missingFields.length > 0) {
-        console.warn("Missing required fields:", missingFields);
-        return res.status(400).json({ 
-          error: "Incomplete data received from Zapier", 
-          missingFields,
-          receivedData: data
-        });
-      }
-
-      // Check for undefined or empty string values
-      const invalidFields = Object.entries(data)
-        .filter(([key, value]) => requiredFields.includes(key) && (value === undefined || value === ""))
-        .map(([key]) => key);
-
-      if (invalidFields.length > 0) {
-        console.warn("Fields with invalid values:", invalidFields);
-        return res.status(400).json({ 
-          error: "Received invalid values from Zapier", 
-          invalidFields,
-          receivedData: data
-        });
-      }
-
-      // If we've made it here, all required fields are present and valid
-      res.status(200).json({ 
-        status: "success", 
-        data: data
-      });
-    } catch (error) {
-      console.error("Error connecting to Zapier:", error.message);
-      res.status(500).json({ 
-        error: "Failed to connect to Zapier or process the response", 
-        details: error.message 
-      });
-    }
-  } else {
-    res.setHeader("Allow", ["POST"]);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+export default async (req, res) => {
+  if (req.method !== "POST") {
+    // Return a 405 status without logging for non-POST requests
+    res.status(405).end();
+    return;
   }
-}
+
+  try {
+    const zapierPayload = {
+      visitor_information_visitor_id: req.body.visitor_information_visitor_id,
+      event_information_event_type: req.body.event_information_event_type
+    };
+
+    console.info("Sending payload to Zapier:", JSON.stringify(zapierPayload, null, 2));
+
+    const zapierResponse = await fetch('https://hooks.zapier.com/hooks/catch/your_zap_id_here', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(zapierPayload)
+    });
+
+    const responseData = await zapierResponse.json();
+    console.info("Received response from Zapier:", JSON.stringify(responseData, null, 2));
+
+    if (zapierResponse.status === 200) {
+      res.status(200).json(responseData);
+    } else {
+      console.warn("Non-200 response from Zapier:", zapierResponse.status);
+      res.status(zapierResponse.status).json({ error: `Zapier returned status ${zapierResponse.status}` });
+    }
+  } catch (error) {
+    console.error("Error communicating with Zapier:", error);
+    res.status(500).json({ error: "Failed to communicate with Zapier" });
+  }
+};
