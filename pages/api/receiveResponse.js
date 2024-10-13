@@ -1,6 +1,4 @@
-// /api/receiveResponse.js
-
-import fetch from 'node-fetch'; // Ensure fetch is available, if necessary
+// /pages/api/receiveResponse.js
 
 // Regular expression to match UUID v4 format
 const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -60,7 +58,7 @@ export default async (req, res) => {
       return;
     }
 
-    // Process the request and send a secondary POST for metadata
+    // If all required fields are valid, process the request and send a secondary POST
     console.info("Processing valid request:", req.body);
     
     // Send secondary POST request with metadata
