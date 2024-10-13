@@ -1,10 +1,8 @@
 // /pages/api/receiveResponse.js
 
-// Regular expression to match UUID v4 format
-const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 export default async (req, res) => {
   if (req.method !== "POST") {
+    console.warn("Request ignored: Method not allowed. Expected POST.");
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
@@ -15,14 +13,28 @@ export default async (req, res) => {
     // Log the incoming data for debugging
     console.info("Received data from Zapier:", JSON.stringify(req.body, null, 2));
 
-    // Check for primary data
-    const hasPrimaryData = visitor_id && eventDate && fullName && status;
+    // Track which fields are missing
+    const missingFields = [];
     
-    // Check for metadata fields
+    if (!visitor_id) missingFields.push("visitor_id");
+    if (!eventDate) missingFields.push("eventDate");
+    if (!fullName) missingFields.push("fullName");
+    if (!status) missingFields.push("status");
+
+    // Check for primary data and metadata fields
+    const hasPrimaryData = visitor_id && eventDate && fullName && status;
     const hasMetadata = attempt || request_id;
 
+    if (!hasPrimaryData) {
+      if (missingFields.length > 0) {
+        console.warn(`Ignoring request due to missing required fields: ${missingFields.join(", ")}.`);
+      } else {
+        console.warn("Ignoring request due to absence of primary data fields.");
+      }
+    }
+
     // Primary data validation
-    if (hasPrimaryData && uuidV4Regex.test(visitor_id)) {
+    if (hasPrimaryData) {
       console.info("Processing valid primary data request:", req.body);
       res.status(200).json({
         status: "success",
@@ -33,7 +45,10 @@ export default async (req, res) => {
 
     // Metadata classification
     if (hasMetadata && !hasPrimaryData) {
-      console.info("Processing metadata request only:", req.body);
+      console.info("Processing metadata request only. Metadata fields present:", {
+        attempt, 
+        request_id
+      });
       res.status(207).json({
         status: "multi-status",
         metadata: { attempt, request_id }
@@ -41,8 +56,8 @@ export default async (req, res) => {
       return;
     }
 
-    // If both primary and metadata are missing or invalid, ignore
-    console.warn("Ignoring request due to missing required fields.");
+    // Log if the request has no relevant fields for processing
+    console.warn("Ignoring request due to absence of both primary data and metadata fields.");
     res.status(204).end(); // No response content for incomplete data
   } catch (error) {
     console.error("Error processing Zapier response:", error);
