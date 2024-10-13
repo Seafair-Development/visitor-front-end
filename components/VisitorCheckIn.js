@@ -7,16 +7,23 @@ const VisitorCheckIn = () => {
   const [eventType, setEventType] = useState("Sign In");
   const [statusMessage, setStatusMessage] = useState("");
   const [visitorData, setVisitorData] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null); // New state for debug information
 
   // Function to handle the API call and response
   const handleApiResponse = async () => {
-    try {
-      const payload = {
-        visitor_information_visitor_id: visitorId,
-        event_information_event_type: eventType === "Sign In" ? "signin_after" : "signout_after"
-      };
+    const payload = {
+      visitor_information_visitor_id: visitorId,
+      event_information_event_type: eventType === "Sign In" ? "signin_after" : "signout_after"
+    };
 
-      const response = await fetch('/api/receiveResponse', {
+    // Log the payload being sent to Zapier
+    console.info("Sending payload to Zapier:", JSON.stringify(payload, null, 2));
+
+    // Set debug information for sent JSON
+    setDebugInfo({ sentJSON: payload, receivedJSON: null });
+
+    try {
+      const response = await fetch('/api/proxyToZapier', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -29,15 +36,21 @@ const VisitorCheckIn = () => {
       // Handle only 200 OK responses
       if (response.status === 200) {
         const data = await response.json();
-        setVisitorData(data); // Set visitor data for rendering
+        console.info("Received data from Zapier:", JSON.stringify(data, null, 2));
+        
+        // Update visitor data for rendering and debug info for received JSON
+        setVisitorData(data);
+        setDebugInfo(prev => ({ ...prev, receivedJSON: data }));
         setStatusMessage("Check-in complete!");
       } else {
         console.warn(`Ignored non-200 response: ${response.status}`);
         setStatusMessage("Check-in unsuccessful. Please try again.");
+        setDebugInfo(prev => ({ ...prev, receivedJSON: `Non-200 response: ${response.status}` }));
       }
     } catch (error) {
       console.error('Error with the API call:', error);
       setStatusMessage("An error occurred. Please try again.");
+      setDebugInfo(prev => ({ ...prev, receivedJSON: `Error: ${error.message}` }));
     }
   };
 
@@ -83,6 +96,16 @@ const VisitorCheckIn = () => {
       </form>
 
       <p><strong>Status:</strong> {statusMessage}</p>
+
+      {debugInfo && (
+        <div>
+          <h3>Debug Mode:</h3>
+          <p><strong>Sent JSON:</strong></p>
+          <pre>{JSON.stringify(debugInfo.sentJSON, null, 2)}</pre>
+          <p><strong>Received JSON:</strong></p>
+          <pre>{JSON.stringify(debugInfo.receivedJSON, null, 2)}</pre>
+        </div>
+      )}
 
       {visitorData && (
         <div>
