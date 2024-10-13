@@ -16,7 +16,6 @@ const VisitorCheckIn = () => {
       event_information_event_type: eventType === "Sign In" ? "signin_after" : "signout_after"
     };
 
-    // Log the payload and set debug info for sent JSON
     console.info("Sending payload to Zapier:", JSON.stringify(payload, null, 2));
     setDebugInfo({ sentJSON: payload, receivedJSON: null });
 
@@ -31,15 +30,22 @@ const VisitorCheckIn = () => {
 
       clearStatusMessage();
 
-      // Handle only 200 OK responses
       if (response.status === 200) {
         const data = await response.json();
         console.info("Received data from Zapier:", JSON.stringify(data, null, 2));
         
-        // Update visitor data and debug info
-        setVisitorData(data);
+        // Check if the response contains all primary data fields
+        if (data.visitor_id && data.eventDate && data.fullName && data.status) {
+          // Only set visitor data if it is complete primary data
+          setVisitorData(data);
+          setStatusMessage("Check-in complete!");
+        } else {
+          console.warn("Received metadata instead of primary data.");
+          setStatusMessage("Received metadata, no visitor details available.");
+        }
+        
+        // Update debug info with the received JSON
         setDebugInfo(prev => ({ ...prev, receivedJSON: data }));
-        setStatusMessage("Check-in complete!");
       } else {
         console.warn(`Ignored non-200 response: ${response.status}`);
         setStatusMessage("Check-in unsuccessful. Please try again.");
