@@ -13,9 +13,9 @@ export default async (req, res) => {
     // Log the incoming data for debugging
     console.info("Received data from Zapier:", JSON.stringify(req.body, null, 2));
 
-    // Prioritize handling metadata requests first
+    // Handle metadata requests first, to skip and log them immediately
     if ((attempt || request_id) && !visitor_id && !eventDate && !fullName && !status) {
-      console.info("Processing metadata request only:", { attempt, request_id });
+      console.info("Processing metadata request only. Returning 207 Multi-Status:", { attempt, request_id });
       res.status(207).json({
         status: "multi-status",
         metadata: { attempt, request_id }
@@ -30,7 +30,7 @@ export default async (req, res) => {
     if (!fullName) missingFields.push("fullName");
     if (!status) missingFields.push("status");
 
-    // Check if all primary fields are present
+    // Process primary data if all required fields are present
     if (!missingFields.length) {
       console.info("Processing valid primary data request. Returning 200 OK:", req.body);
       res.status(200).json({
@@ -41,11 +41,9 @@ export default async (req, res) => {
     }
 
     // Log missing fields if primary data is incomplete
-    if (missingFields.length > 0) {
-      console.warn(`Ignoring request due to missing required fields: ${missingFields.join(", ")}.`);
-    }
+    console.warn(`Ignoring request due to missing required fields: ${missingFields.join(", ")}.`);
 
-    // Final case: If both primary and metadata fields are missing, log and ignore
+    // Final case: If neither primary nor metadata fields are present, log and ignore
     console.warn("Ignoring request due to absence of both primary data and metadata fields.");
     res.status(204).end();
   } catch (error) {
