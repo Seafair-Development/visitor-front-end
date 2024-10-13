@@ -30,9 +30,13 @@ export default async (req, res) => {
     if (!fullName) missingFields.push("fullName");
     if (!status) missingFields.push("status");
 
-    // Process primary data if all required fields are present
+    // Log primary data if all required fields are present and return 200 OK
     if (!missingFields.length) {
-      console.info("Processing valid primary data request. Returning 200 OK:", req.body);
+      // Log primary data processing success before responding
+      console.info("Processing valid primary data request. Returning 200 OK:", {
+        visitor_id, eventDate, fullName, status
+      });
+      
       res.status(200).json({
         status: "success",
         data: { visitor_id, eventDate, fullName, status }
@@ -41,9 +45,11 @@ export default async (req, res) => {
     }
 
     // Log missing fields if primary data is incomplete
-    console.warn(`Ignoring request due to missing required fields: ${missingFields.join(", ")}.`);
+    if (missingFields.length > 0) {
+      console.warn(`Ignoring request due to missing required fields: ${missingFields.join(", ")}.`);
+    }
 
-    // Final case: If neither primary nor metadata fields are present, log and ignore
+    // Final case: If both primary and metadata fields are missing, log and ignore
     console.warn("Ignoring request due to absence of both primary data and metadata fields.");
     res.status(204).end();
   } catch (error) {
