@@ -7,6 +7,7 @@ export default async (req, res) => {
   }
 
   try {
+    // Explicitly structure the payload to match Zapier's expected format
     const zapierPayload = {
       visitor_information_visitor_id: req.body.visitor_information_visitor_id,
       event_information_event_type: req.body.event_information_event_type
@@ -24,18 +25,24 @@ export default async (req, res) => {
     let responseData;
 
     if (contentType && contentType.includes('application/json')) {
+      // Parse JSON response if Content-Type is correct
       responseData = await zapierResponse.json();
     } else {
+      // Handle non-JSON response as an error
       responseData = await zapierResponse.text();
       console.warn("Non-JSON response from Zapier:", responseData);
+      
+      // Send back a 500 status with the unexpected response
+      res.status(500).json({ error: "Unexpected response format from Zapier", details: responseData });
+      return; // Stop further processing since response was not JSON
     }
 
-    // Only process responses that include primary data fields
+    // Confirm the response includes necessary data before forwarding it
     if (zapierResponse.ok && responseData.visitor_id && responseData.eventDate && responseData.fullName && responseData.status) {
       res.status(200).json(responseData);
     } else {
-      console.warn("Received metadata or incomplete data from Zapier, not sending to the front end:", responseData);
-      res.status(204).end(); // Use 204 to indicate no content
+      console.warn("Received incomplete or metadata response from Zapier:", responseData);
+      res.status(204).end(); // Use 204 to indicate no content for incomplete/metadata responses
     }
   } catch (error) {
     console.error("Error communicating with Zapier:", error);
