@@ -6,44 +6,46 @@ export default async (req, res) => {
     return;
   }
 
+  console.log("Incoming request body:", req.body);
+
+  // Input validation
+  if (!req.body.visitor_information_visitor_id || !req.body.event_information_event_type) {
+    res.status(400).json({ error: "Missing required fields in request body" });
+    return;
+  }
+
   try {
-    // Explicitly structure the payload correctly
     const zapierPayload = {
       visitor_information_visitor_id: req.body.visitor_information_visitor_id,
       event_information_event_type: req.body.event_information_event_type
     };
 
-    const zapierResponse = await fetch("https://hooks.zapier.com/hooks/catch/your_zap_id_here", {
+    const zapierResponse = await fetch("https://hooks.zapier.com/hooks/catch/13907609/2m737mn/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(zapierPayload)
+      body: JSON.stringify(zapierPayload),
+      timeout: 10000 // 10 second timeout
     });
 
-    const contentType = zapierResponse.headers.get('content-type');
-    let responseData;
+    console.log("Zapier response status:", zapierResponse.status);
 
-    if (contentType && contentType.includes('application/json')) {
-      // Parse JSON response if Content-Type is correct
-      responseData = await zapierResponse.json();
+    if (zapierResponse.ok) {
+      const responseData = await zapierResponse.json();
+      console.log("Zapier response data:", responseData);
+
+      if (responseData.visitor_id && responseData.eventDate && responseData.fullName && responseData.status) {
+        res.status(200).json(responseData);
+      } else {
+        res.status(500).json({ error: "Incomplete data received from Zapier" });
+      }
     } else {
-      // Handle non-JSON response as an error
-      responseData = await zapierResponse.text();
-      console.warn("Non-JSON response from Zapier:", responseData);
-      
-      // Send back a 500 status with the unexpected response
-      res.status(500).json({ error: "Unexpected response format from Zapier", details: responseData });
-      return; // Stop further processing since response was not JSON
+      const errorText = await zapierResponse.text();
+      console.error("Zapier error response:", errorText);
+      res.status(zapierResponse.status).json({ error: "Error from Zapier" });
     }
 
-    // Confirm the response includes necessary data before forwarding it
-    if (zapierResponse.ok && responseData.visitor_id && responseData.eventDate && responseData.fullName && responseData.status) {
-      res.status(200).json(responseData);
-    } else {
-      console.warn("Received incomplete or metadata response from Zapier:", responseData);
-      res.status(204).end(); // Use 204 to indicate no content for incomplete/metadata responses
-    }
   } catch (error) {
     console.error("Error communicating with Zapier:", error);
     res.status(500).json({ error: "Failed to communicate with Zapier" });
