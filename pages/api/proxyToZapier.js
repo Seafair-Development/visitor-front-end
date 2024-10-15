@@ -7,7 +7,7 @@ export default async (req, res) => {
   }
 
   try {
-    // Explicitly structure the payload to match Zapier's expected format
+    // Explicitly structure the payload correctly
     const zapierPayload = {
       visitor_information_visitor_id: req.body.visitor_information_visitor_id,
       event_information_event_type: req.body.event_information_event_type
